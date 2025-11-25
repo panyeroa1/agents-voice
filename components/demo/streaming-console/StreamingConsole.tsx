@@ -1,8 +1,9 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import PopUp from '../popup/PopUp';
 import WelcomeScreen from '../welcome-screen/WelcomeScreen';
 // FIX: Import LiveServerContent to correctly type the content handler.
@@ -52,7 +53,7 @@ const renderContent = (text: string) => {
 
 
 export default function StreamingConsole() {
-  const { client, setConfig } = useLiveAPIContext();
+  const { client, setConfig, connected, connect } = useLiveAPIContext();
   const { systemPrompt, voice } = useSettings();
   const { tools } = useTools();
   const turns = useLogStore(state => state.turns);
@@ -189,11 +190,28 @@ export default function StreamingConsole() {
     }
   }, [turns]);
 
+  const handlePromptClick = useCallback(async (prompt: string) => {
+    if (!connected) {
+      await connect();
+    }
+    
+    // Add the turn to the log manually so it appears in the UI
+    useLogStore.getState().addTurn({
+      role: 'user',
+      text: prompt,
+      isFinal: true,
+    });
+    
+    client.send([{ text: prompt }]);
+  }, [client, connected, connect]);
+
+  const setTurnFeedback = useLogStore(state => state.setTurnFeedback);
+
   return (
     <div className="transcription-container">
       {showPopUp && <PopUp onClose={handleClosePopUp} />}
       {turns.length === 0 ? (
-        <WelcomeScreen />
+        <WelcomeScreen onPromptClick={handlePromptClick} />
       ) : (
         <div className="transcription-view" ref={scrollRef}>
           {turns.map((t, i) => (
@@ -235,6 +253,26 @@ export default function StreamingConsole() {
                         </li>
                       ))}
                   </ul>
+                </div>
+              )}
+              {t.role === 'agent' && t.isFinal && (
+                <div className="feedback-controls">
+                  <button
+                    className={`feedback-button ${t.feedback === 'positive' ? 'active' : ''}`}
+                    onClick={() => setTurnFeedback(i, 'positive')}
+                    aria-label="Thumbs up"
+                    title="Good response"
+                  >
+                    <span className="material-symbols-outlined">thumb_up</span>
+                  </button>
+                  <button
+                    className={`feedback-button ${t.feedback === 'negative' ? 'active' : ''}`}
+                    onClick={() => setTurnFeedback(i, 'negative')}
+                    aria-label="Thumbs down"
+                    title="Bad response"
+                  >
+                    <span className="material-symbols-outlined">thumb_down</span>
+                  </button>
                 </div>
               )}
             </div>

@@ -158,12 +158,14 @@ export interface ConversationTurn {
   toolUseRequest?: LiveServerToolCall;
   toolUseResponse?: LiveClientToolResponse;
   groundingChunks?: GroundingChunk[];
+  feedback?: 'positive' | 'negative';
 }
 
 export const useLogStore = create<{
   turns: ConversationTurn[];
   addTurn: (turn: Omit<ConversationTurn, 'timestamp'>) => void;
   updateLastTurn: (update: Partial<ConversationTurn>) => void;
+  setTurnFeedback: (index: number, feedback: 'positive' | 'negative') => void;
   clearTurns: () => void;
 }>((set, get) => ({
   turns: [],
@@ -179,6 +181,20 @@ export const useLogStore = create<{
       const newTurns = [...state.turns];
       const lastTurn = { ...newTurns[newTurns.length - 1], ...update };
       newTurns[newTurns.length - 1] = lastTurn;
+      return { turns: newTurns };
+    });
+  },
+  setTurnFeedback: (index, feedback) => {
+    set(state => {
+      const newTurns = [...state.turns];
+      if (newTurns[index]) {
+        // Toggle logic: if clicking the same feedback, remove it
+        if (newTurns[index].feedback === feedback) {
+          newTurns[index] = { ...newTurns[index], feedback: undefined };
+        } else {
+          newTurns[index] = { ...newTurns[index], feedback };
+        }
+      }
       return { turns: newTurns };
     });
   },

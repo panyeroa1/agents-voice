@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -37,7 +38,11 @@ const welcomeContent: Record<Template, { title: string; description: string; pro
   },
 };
 
-const WelcomeScreen: React.FC = () => {
+interface WelcomeScreenProps {
+  onPromptClick?: (prompt: string) => void;
+}
+
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onPromptClick }) => {
   const { template, setTemplate } = useTools();
   const { title, description, prompts } = welcomeContent[template];
   return (
@@ -57,7 +62,13 @@ const WelcomeScreen: React.FC = () => {
         <p>{description}</p>
         <div className="example-prompts">
           {prompts.map((prompt, index) => (
-            <div key={index} className="prompt">{prompt}</div>
+            <button 
+              key={index} 
+              className="prompt" 
+              onClick={() => onPromptClick?.(prompt)}
+            >
+              {prompt}
+            </button>
           ))}
         </div>
       </div>

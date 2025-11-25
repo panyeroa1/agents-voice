@@ -96,7 +96,7 @@ export class GenAILiveClient {
     if (model) this.model = model;
 
     this.client = new GoogleGenAI({
-      apiKey: apiKey,
+      apiKey: apiKey || process.env.API_KEY,
     });
   }
 
